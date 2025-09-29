@@ -26,9 +26,10 @@ class ORINAgent:
     def __init__(self, user_context: Dict[str, Any] = None):
         """Initialize the ORIN agent."""
         self.user_context = user_context or {}
+        model_name = settings.openai_model or "gpt-4o-mini"
         self.llm = ChatOpenAI(
             temperature=0.1,
-            model="gpt-5-nano",
+            model=model_name,
             openai_api_key=settings.openai_api_key
         )
         self.memory = ConversationBufferWindowMemory(

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     
     # OpenAI Configuration
     openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
     
     # Pinecone Configuration  
     pinecone_api_key: str = ""
