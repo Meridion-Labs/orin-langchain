@@ -44,7 +44,7 @@ class ORINAgent:
         """Setup tools for the agent."""
         return [
             search_documents_tool,
-            search_chat_history_tool,
+            # search_chat_history_tool,
             fetch_user_data_tool,
             create_api_response_tool,
         ]
@@ -119,7 +119,7 @@ User Context: {user_context_str}
             print(f"DEBUG: Clean response: {clean_response}")  # Debug log
             
             # Store chat history in vector store for future reference (optional)
-            if self.user_context.get("user_id"):
+            if settings.store_chat_history and self.user_context.get("user_id"):
                 try:
                     document_manager.add_chat_history(
                         user_query=user_input,

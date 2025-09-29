@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     debug: bool = True
+
+    # Feature Flags
+    store_chat_history: bool = False
     
     # Internal Portal Integration
     portal_base_url: str = ""
