@@ -1,16 +1,21 @@
-# Core AI and NLP
-langchain==0.1.0
-langchain-openai==0.0.5
-langchain-community==0.0.20
-openai==1.10.0
+# Core AI and NLP - Working versions for Python 3.13
+langchain==0.3.14
+langchain-openai==0.3.11
+langchain-community==0.3.14
+langchain-text-splitters==0.3.8
+langchain-pinecone==0.2.12
+langchain-core==0.3.63
+langsmith==0.2.11
+openai==1.109.1
 
 # Vector Database
-pinecone-client==3.0.0
+pinecone==7.3.0
 
 # Web Framework
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-python-multipart==0.0.6
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+aiofiles==24.1.0
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0
@@ -18,25 +23,27 @@ passlib[bcrypt]==1.7.4
 python-decouple==3.8
 
 # Data Processing
-pandas==2.2.0
-numpy==1.26.3
-pydantic==2.5.3
+pandas==2.3.2
+numpy==2.3.3
+pydantic==2.10.4
+email-validator==2.1.1
 
 # HTTP and API
-httpx==0.26.0
-requests==2.31.0
+httpx==0.28.1
+requests==2.32.3
 
 # Document Processing
-pypdf2==3.0.1
-python-docx==1.1.0
-openpyxl==3.1.2
+pypdf==6.1.1
+python-docx==1.1.2
+openpyxl==3.1.5
+docx2txt==0.8
 
 # Database
-sqlalchemy==2.0.25
-alembic==1.13.1
+sqlalchemy==2.0.36
+alembic==1.14.0
 
 # Development
-pytest==8.0.0
-pytest-asyncio==0.23.4
-black==24.1.1
-flake8==7.0.0
+pytest==8.3.4
+pytest-asyncio==0.24.0
+black==24.10.0
+flake8==7.1.1

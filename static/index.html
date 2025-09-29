@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORIN AI Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-tertiary: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1a1;
+            --text-muted: #666666;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --border: #262626;
+            --border-light: #333333;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0 2rem;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 0 2rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Chat Interface */
+        .chat-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        .chat-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .message.user .message-avatar {
+            background: var(--accent);
+            color: white;
+        }
+
+        .message.assistant .message-avatar {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .message-content {
+            background: var(--bg-tertiary);
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: var(--accent);
+            color: white;
+        }
+
+        .message-sources {
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .message.user .message-sources {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .sources-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .sources-icon {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+
+        .source-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .source-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .source-item:before {
+            content: "📄";
+            font-size: 11px;
+            opacity: 0.6;
+        }
+
+        .source-filename {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .source-type {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .chat-input-container {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+            resize: none;
+            max-height: 120px;
+            min-height: 44px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Auth Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 1.5rem;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            padding: 0 1.5rem;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .dot {
+            width: 4px;
+            height: 4px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% {
+                opacity: 0.3;
+            }
+            40% {
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main {
+                padding: 0 1rem;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .chat-container {
+                height: 500px;
+                margin: 1rem 0;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">O</div>
+                <div class="logo-text">ORIN</div>
+            </div>
+            <div class="auth-section" id="authSection">
+                <button class="btn btn-secondary" onclick="showAuthModal('signin')">Sign In</button>
+                <button class="btn btn-primary" onclick="showAuthModal('signup')">Get Started</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="hero">
+            <h1>AI Agent for Your Office</h1>
+            <p>Resolve queries and reduce staff coordination issues with intelligent automation</p>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="status-indicator"></div>
+                <div class="chat-title">ORIN Assistant</div>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        Hello! I'm ORIN, your AI assistant. I can help you with document queries, staff coordination, and accessing information from your organization's systems. How can I assist you today?
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <span>ORIN is typing</span>
+                <div class="typing-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <textarea 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Ask me anything about your organization..."
+                        rows="1"
+                        disabled
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Auth Modal -->
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Sign In to ORIN</h2>
+                <p class="modal-subtitle" id="modalSubtitle">Access your organization's AI assistant</p>
+            </div>
+            
+            <form onsubmit="handleAuth(event)" id="authForm">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" class="form-input" id="email" required>
+                </div>
+                
+                <div class="form-group" id="fullNameGroup" style="display: none;">
+                    <label class="form-label" for="fullName">Full Name</label>
+                    <input type="text" class="form-input" id="fullName">
+                </div>
+                
+                <div class="form-group" id="departmentGroup" style="display: none;">
+                    <label class="form-label" for="department">Department</label>
+                    <input type="text" class="form-input" id="department">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" class="form-input" id="password" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideAuthModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="authSubmitBtn">Sign In</button>
+                </div>
+                
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button type="button" class="btn btn-secondary" onclick="toggleAuthMode()" id="toggleModeBtn" style="background: none; border: none; color: var(--accent); text-decoration: underline;">
+                        Don't have an account? Sign up
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('authToken');
+        let isAuthenticated = !!authToken;
+        let currentAuthMode = 'signin'; // 'signin' or 'signup'
+
+        const escapeHtml = (value) => {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        };
+
+        // Initialize the app
+        function init() {
+            if (isAuthenticated) {
+                updateAuthState();
+                enableChat();
+            }
+        }
+
+        // Auth functions
+        function showAuthModal(mode = 'signin') {
+            currentAuthMode = mode;
+            updateAuthModalContent();
+            document.getElementById('authModal').classList.add('show');
+        }
+
+        function hideAuthModal() {
+            document.getElementById('authModal').classList.remove('show');
+            clearAuthForm();
+        }
+
+        function toggleAuthMode() {
+            currentAuthMode = currentAuthMode === 'signin' ? 'signup' : 'signin';
+            updateAuthModalContent();
+        }
+
+        function updateAuthModalContent() {
+            const modalTitle = document.getElementById('modalTitle');
+            const modalSubtitle = document.getElementById('modalSubtitle');
+            const authSubmitBtn = document.getElementById('authSubmitBtn');
+            const toggleModeBtn = document.getElementById('toggleModeBtn');
+            const fullNameGroup = document.getElementById('fullNameGroup');
+            const departmentGroup = document.getElementById('departmentGroup');
+
+            if (currentAuthMode === 'signin') {
+                modalTitle.textContent = 'Sign In to ORIN';
+                modalSubtitle.textContent = 'Access your organization\'s AI assistant';
+                authSubmitBtn.textContent = 'Sign In';
+                toggleModeBtn.textContent = 'Don\'t have an account? Sign up';
+                fullNameGroup.style.display = 'none';
+                departmentGroup.style.display = 'none';
+                
+                // Make additional fields non-required
+                document.getElementById('fullName').required = false;
+                document.getElementById('department').required = false;
+            } else {
+                modalTitle.textContent = 'Create ORIN Account';
+                modalSubtitle.textContent = 'Join your organization\'s AI assistant';
+                authSubmitBtn.textContent = 'Create Account';
+                toggleModeBtn.textContent = 'Already have an account? Sign in';
+                fullNameGroup.style.display = 'block';
+                departmentGroup.style.display = 'block';
+                
+                // Make additional fields required for signup
+                document.getElementById('fullName').required = true;
+                document.getElementById('department').required = true;
+            }
+        }
+
+        function clearAuthForm() {
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('fullName').value = '';
+            document.getElementById('department').value = '';
+        }
+
+        function updateAuthState() {
+            const authSection = document.getElementById('authSection');
+            if (isAuthenticated) {
+                authSection.innerHTML = `
+                    <button class="btn btn-secondary" onclick="logout()">Sign Out</button>
+                `;
+            } else {
+                authSection.innerHTML = `
+                    <button class="btn btn-secondary" onclick="showAuthModal('signin')">Sign In</button>
+                    <button class="btn btn-primary" onclick="showAuthModal('signup')">Get Started</button>
+                `;
+            }
+        }
+
+        function enableChat() {
+            document.getElementById('chatInput').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('chatInput').placeholder = "Ask me anything about your organization...";
+        }
+
+        function disableChat() {
+            document.getElementById('chatInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('chatInput').placeholder = "Please sign in to start chatting...";
+        }
+
+        async function handleAuth(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                let endpoint, requestBody;
+                
+                if (currentAuthMode === 'signin') {
+                    endpoint = '/auth/login';
+                    requestBody = { email, password };
+                } else {
+                    endpoint = '/auth/register';
+                    const fullName = document.getElementById('fullName').value;
+                    const department = document.getElementById('department').value;
+                    requestBody = { 
+                        email, 
+                        password, 
+                        full_name: fullName,
+                        department: department || 'General',
+                        role: 'user',
+                        is_active: true
+                    };
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (currentAuthMode === 'signup') {
+                        alert('Account created successfully! Please sign in.');
+                        toggleAuthMode(); // Switch to sign-in mode
+                        clearAuthForm();
+                        return;
+                    }
+                    
+                    // For sign-in
+                    authToken = data.access_token;
+                    localStorage.setItem('authToken', authToken);
+                    isAuthenticated = true;
+                    
+                    hideAuthModal();
+                    updateAuthState();
+                    enableChat();
+                } else {
+                    alert(data.detail || (currentAuthMode === 'signin' ? 'Login failed' : 'Registration failed'));
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                alert((currentAuthMode === 'signin' ? 'Login' : 'Registration') + ' failed. Please try again.');
+            }
+        }
+
+        function logout() {
+            authToken = null;
+            localStorage.removeItem('authToken');
+            isAuthenticated = false;
+            updateAuthState();
+            disableChat();
+            
+            // Clear chat messages
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="message assistant">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        Hello! I'm ORIN, your AI assistant. Please sign in to start our conversation.
+                    </div>
+                </div>
+            `;
+        }
+
+        // Chat functions
+        function addMessage(content, isUser = false, sources = []) {
+            console.log('addMessage called with:', { content, isUser, sources }); // Debug log
+            
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            
+            let sourcesHtml = '';
+            if (!isUser && Array.isArray(sources) && sources.length > 0) {
+                console.log('Adding sources:', sources); // Debug log
+
+                const sourceItems = sources
+                    .map(source => {
+                        if (!source || typeof source !== 'object') {
+                            return null;
+                        }
+
+                        const filename = source.filename || source.source || 'Unknown source';
+                        if (!filename || filename === 'Unknown source') {
+                            return null;
+                        }
+
+                        const metaParts = [];
+                        if (source.document_type) metaParts.push(source.document_type);
+                        if (source.department) metaParts.push(source.department);
+
+                        const subtitle = metaParts.length > 0 ? metaParts.join(' • ') : 'Retrieved document';
+                        const sourcePath = source.source || '';
+                        const filenameSafe = escapeHtml(filename);
+                        const subtitleSafe = escapeHtml(subtitle);
+                        const titleSafe = escapeHtml(sourcePath);
+
+                        return `
+                            <div class="source-item" title="${titleSafe}">
+                                <span class="source-filename">${filenameSafe}</span>
+                                <span class="source-type">${subtitleSafe}</span>
+                            </div>
+                        `;
+                    })
+                    .filter(Boolean)
+                    .join('');
+
+                if (sourceItems) {
+                    sourcesHtml = `
+                        <div class="message-sources">
+                            <div class="sources-header">
+                                <span class="sources-icon">🔗</span>
+                                <span>Sources</span>
+                            </div>
+                            ${sourceItems}
+                        </div>
+                    `;
+                }
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isUser ? 'You' : 'AI'}</div>
+                <div class="message-content">
+                    ${content}
+                    ${sourcesHtml}
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTyping() {
+            document.getElementById('typingIndicator').style.display = 'flex';
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTyping() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        async function sendMessage() {
+            if (!isAuthenticated) {
+                showAuthModal('signin');
+                return;
+            }
+
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, true);
+            input.value = '';
+            
+            // Show typing indicator
+            showTyping();
+
+            try {
+                const response = await fetch('/api/v1/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                console.log('API response:', data); // Debug log
+                hideTyping();
+
+                if (response.ok) {
+                    console.log('Calling addMessage with sources:', data.sources); // Debug log
+                    addMessage(data.response, false, data.sources || []);
+                } else {
+                    if (response.status === 401) {
+                        logout();
+                        showAuthModal('signin');
+                    } else {
+                        addMessage('Sorry, I encountered an error. Please try again.');
+                    }
+                }
+            } catch (error) {
+                hideTyping();
+                console.error('Chat error:', error);
+                addMessage('Sorry, I encountered an error. Please try again.');
+            }
+        }
+
+        // Enter key to send message
+        document.getElementById('chatInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Auto-resize textarea
+        document.getElementById('chatInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Close modal on outside click
+        document.getElementById('authModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideAuthModal();
+            }
+        });
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>

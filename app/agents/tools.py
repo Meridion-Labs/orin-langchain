@@ -2,12 +2,41 @@
 
 import json
 import httpx
-from typing import Dict, Any, List
-from langchain.tools import Tool
-from langchain.schema import Document
+import os
+from contextvars import ContextVar
+from typing import Dict, Any, List, Optional
+from langchain_core.tools import Tool
+from langchain_core.documents import Document
 
 from app.config import settings
 from app.rag import document_manager
+
+
+# Context variable to track sources gathered during the current agent run
+_rag_sources_var: ContextVar[Optional[List[Dict[str, Any]]]] = ContextVar("rag_sources", default=None)
+
+
+def _append_rag_sources(new_sources: List[Dict[str, Any]]) -> None:
+    """Append sources for the current agent invocation."""
+    existing = _rag_sources_var.get()
+    if existing:
+        # Deduplicate while preserving order
+        combined = existing + [src for src in new_sources if src not in existing]
+        _rag_sources_var.set(combined)
+    else:
+        _rag_sources_var.set(new_sources)
+
+
+def get_and_clear_rag_sources() -> List[Dict[str, Any]]:
+    """Retrieve and clear tracked RAG sources for the current context."""
+    sources = _rag_sources_var.get()
+    _rag_sources_var.set([])
+    return sources or []
+
+
+def reset_rag_sources() -> None:
+    """Reset tracked RAG sources before running a new agent query."""
+    _rag_sources_var.set([])
 
 
 def search_documents(query: str, document_type: str = None, department: str = None) -> str:
@@ -24,14 +53,69 @@ def search_documents(query: str, document_type: str = None, department: str = No
             return "No relevant documents found for your query."
         
         results = []
+        source_details: List[Dict[str, Any]] = []
         for i, doc in enumerate(documents, 1):
             content = doc.page_content[:300] + "..." if len(doc.page_content) > 300 else doc.page_content
-            metadata_info = ""
-            if doc.metadata:
-                metadata_info = f" [Source: {doc.metadata.get('source', 'Unknown')}]"
-            results.append(f"{i}. {content}{metadata_info}")
-        
-        return "Relevant documents found:\n" + "\n\n".join(results)
+            
+            # Extract source information
+            source_info = ""
+            metadata = doc.metadata or {}
+            source_path = metadata.get('source')
+            doc_type = metadata.get('document_type') or metadata.get('type') or 'Document'
+            department_info = metadata.get('department') or ''
+
+            filename = metadata.get('filename') or metadata.get('file_name')
+            if not filename and source_path:
+                filename = os.path.basename(source_path)
+            if not filename:
+                filename = 'Unknown source'
+
+            if filename and filename != 'Unknown source':
+                source_info = f" [Source: {filename}"
+                if department_info:
+                    source_info += f" - {department_info}"
+                source_info += f" ({doc_type})]"
+            elif doc_type:
+                source_info = f" [Source: {doc_type}]"
+
+            source_details.append({
+                "filename": filename,
+                "document_type": doc_type,
+                "department": department_info,
+                "source": source_path,
+                "metadata": metadata
+            })
+
+            results.append(f"{i}. {content}{source_info}")
+
+        # Track sources for UI consumption
+        if source_details:
+            unique_sources = []
+            seen_keys = set()
+            for detail in source_details:
+                filename = detail.get("filename")
+                if not filename or filename == "Unknown source":
+                    continue
+
+                key = (
+                    filename,
+                    detail.get("document_type"),
+                    detail.get("department"),
+                    detail.get("source")
+                )
+                if not detail.get("filename") or key in seen_keys:
+                    continue
+                seen_keys.add(key)
+                unique_sources.append(detail)
+
+            if unique_sources:
+                _append_rag_sources(unique_sources)
+                print(f"DEBUG: Tracked RAG sources: {unique_sources}")
+
+        # Prepare the response summary without explicit sources section
+        response = "Relevant documents found:\n" + "\n\n".join(results)
+
+        return response
     
     except Exception as e:
         return f"Error searching documents: {str(e)}"

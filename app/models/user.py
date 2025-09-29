@@ -26,7 +26,7 @@ class User(UserBase):
     updated_at: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserInDB(User):
@@ -62,7 +62,7 @@ class APIKey(BaseModel):
     expires_at: Optional[datetime] = None
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class APIKeyCreate(BaseModel):

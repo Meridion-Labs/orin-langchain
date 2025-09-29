@@ -10,8 +10,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config import settings
 from app.models import TokenData
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing context - using simple PBKDF2 for development
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 # JWT token security
 security = HTTPBearer()
@@ -60,10 +60,93 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
     return token_data
 
 
-def authenticate_user(email: str, password: str) -> bool:
-    """Authenticate user (placeholder for database integration)."""
-    # This would integrate with your user database
-    # For now, returning True for demo purposes
+def verify_admin_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> TokenData:
+    """Verify JWT token and ensure user has admin role."""
+    token_data = verify_token(credentials)
+    
+    # For now, we'll use a simple email-based admin check
+    # In production, this should check against a database
+    admin_emails = settings.admin_emails or ["admin@orin.ai"]
+    
+    if token_data.email not in admin_emails:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    
+    return token_data
+
+
+# Simple in-memory user store for demo purposes
+# In production, this would be replaced with a proper database
+fake_users_db = {}
+
+
+def initialize_demo_users():
+    """Initialize some demo users."""
+    global fake_users_db
+    if not fake_users_db:  # Only initialize if empty
+        fake_users_db.update({
+            "test@example.com": {
+                "email": "test@example.com",
+                "full_name": "Test User",
+                "hashed_password": get_password_hash("testpassword"),
+                "department": "IT",
+                "role": "user",
+                "is_active": True
+            },
+            "admin@example.com": {
+                "email": "admin@example.com", 
+                "full_name": "Admin User",
+                "hashed_password": get_password_hash("adminpassword"),
+                "department": "Administration",
+                "role": "admin",
+                "is_active": True
+            },
+            "chambyal20062003@gmail.com": {
+                "email": "chambyal20062003@gmail.com", 
+                "full_name": "Admin User",
+                "hashed_password": get_password_hash("admin123"),
+                "department": "Administration",
+                "role": "admin",
+                "is_active": True
+            }
+        })
+
+
+def get_user(email: str):
+    """Get user from database."""
+    if not fake_users_db:  # Initialize if empty
+        initialize_demo_users()
+    return fake_users_db.get(email)
+
+
+def authenticate_user(email: str, password: str) -> dict:
+    """Authenticate user against stored credentials."""
+    user = get_user(email)
+    if not user:
+        return False
+    if not verify_password(password, user["hashed_password"]):
+        return False
+    return user
+
+
+def create_user(email: str, password: str, full_name: str = None, department: str = None):
+    """Create a new user (for demo purposes)."""
+    if not fake_users_db:  # Initialize if empty
+        initialize_demo_users()
+        
+    if email in fake_users_db:
+        return False  # User already exists
+    
+    fake_users_db[email] = {
+        "email": email,
+        "full_name": full_name or email.split("@")[0],
+        "hashed_password": get_password_hash(password),
+        "department": department or "General",
+        "role": "user",
+        "is_active": True
+    }
     return True
 
 

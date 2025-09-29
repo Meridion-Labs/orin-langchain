@@ -1,6 +1,6 @@
 """Chat API endpoints."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from pydantic import BaseModel
 
@@ -18,9 +18,18 @@ class ChatRequest(BaseModel):
     context: Optional[Dict[str, Any]] = None
 
 
+class SourceInfo(BaseModel):
+    """Structured source metadata for RAG responses."""
+    filename: str
+    document_type: Optional[str] = None
+    department: Optional[str] = None
+    source: Optional[str] = None
+
+
 class ChatResponse(BaseModel):
     """Chat response model."""
     response: str
+    sources: Optional[List[SourceInfo]] = None
     success: bool
     metadata: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
@@ -53,8 +62,13 @@ async def chat_with_agent(
         # Process query
         result = agent.query(request.message)
         
+        # Debug logging
+        print(f"DEBUG: Agent result: {result}")
+        print(f"DEBUG: Sources from agent: {result.get('sources', [])}")
+        
         return ChatResponse(
             response=result["response"],
+            sources=result.get("sources", []),
             success=result["success"],
             metadata=result.get("metadata"),
             error=result.get("error")
@@ -95,6 +109,7 @@ async def chat_with_api_key(
         
         return ChatResponse(
             response=result["response"],
+            sources=result.get("sources", []),
             success=result["success"],
             metadata=result.get("metadata"),
             error=result.get("error")

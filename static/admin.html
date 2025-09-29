@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORIN Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-weight: 300;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .login-section, .admin-panel {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .admin-panel {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background: #f8f9ff;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload-area:hover {
+            background: #f0f2ff;
+            border-color: #5a67d8;
+        }
+
+        .file-upload-area.dragover {
+            background: #e6f3ff;
+            border-color: #3182ce;
+        }
+
+        .selected-files {
+            margin-top: 1rem;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            margin-top: 0.5rem;
+            color: #666;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 ORIN Admin Panel</h1>
+    </div>
+
+    <div class="container">
+        <!-- Login Section -->
+        <div class="login-section" id="loginSection">
+            <h2>Admin Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+        </div>
+
+        <!-- Admin Panel -->
+        <div class="admin-panel" id="adminPanel">
+            <div class="tabs">
+                <div class="tab active" data-tab="dashboard">Dashboard</div>
+                <div class="tab" data-tab="documents">Documents</div>
+                <div class="tab" data-tab="users">Users</div>
+                <div class="tab" data-tab="settings">Settings</div>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div class="tab-content active" id="dashboard">
+                <h2>Dashboard</h2>
+                <div style="margin-bottom: 1rem;">
+                    <button class="btn btn-secondary" onclick="syncStats()">Sync Statistics</button>
+                    <span id="syncStatus" style="margin-left: 1rem;"></span>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalDocs">0</div>
+                        <div class="stat-label">Total Documents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalUsers">0</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="storageUsed">0 MB</div>
+                        <div class="stat-label">Storage Used</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todayUploads">0</div>
+                        <div class="stat-label">Recent Uploads</div>
+                    </div>
+                </div>
+                
+                <div id="departmentStats" style="margin-top: 2rem;">
+                    <h3>Documents by Department</h3>
+                    <div id="departmentChart"></div>
+                </div>
+                
+                <div id="recentUploads" style="margin-top: 2rem;">
+                    <h3>Recent Uploads</h3>
+                    <div id="recentUploadsList"></div>
+                </div>
+            </div>
+
+            <!-- Documents Tab -->
+            <div class="tab-content" id="documents">
+                <h2>Document Management</h2>
+                
+                <div class="grid">
+                    <div>
+                        <h3>Upload Documents</h3>
+                        <form id="uploadForm">
+                            <div class="file-upload-area" id="uploadArea">
+                                <div>
+                                    <strong>Click or drag files here to upload</strong>
+                                    <p>Supported formats: PDF, TXT, DOC, DOCX</p>
+                                </div>
+                                <input type="file" id="fileInput" multiple accept=".pdf,.txt,.doc,.docx" style="display: none;">
+                            </div>
+                            <div class="selected-files" id="selectedFiles"></div>
+                            
+                            <div class="form-group">
+                                <label for="department">Department</label>
+                                <select id="department">
+                                    <option value="general">General</option>
+                                    <option value="hr">Human Resources</option>
+                                    <option value="finance">Finance</option>
+                                    <option value="legal">Legal</option>
+                                    <option value="operations">Operations</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="documentType">Document Type</label>
+                                <select id="documentType">
+                                    <option value="policy">Policy</option>
+                                    <option value="procedure">Procedure</option>
+                                    <option value="manual">Manual</option>
+                                    <option value="report">Report</option>
+                                    <option value="memo">Memo</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <textarea id="description" placeholder="Brief description of the document(s)"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="tags">Tags (comma-separated)</label>
+                                <input type="text" id="tags" placeholder="urgent, policy, 2024">
+                            </div>
+                            
+                            <button type="submit" class="btn">Upload Documents</button>
+                        </form>
+                    </div>
+                    
+                    <div>
+                        <h3>Search Documents</h3>
+                        <form id="searchForm">
+                            <div class="form-group">
+                                <label for="searchQuery">Search Query</label>
+                                <input type="text" id="searchQuery" placeholder="Enter search terms">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="searchDepartment">Department</label>
+                                <select id="searchDepartment">
+                                    <option value="">All Departments</option>
+                                    <option value="general">General</option>
+                                    <option value="hr">Human Resources</option>
+                                    <option value="finance">Finance</option>
+                                    <option value="legal">Legal</option>
+                                    <option value="operations">Operations</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn">Search</button>
+                        </form>
+                        
+                        <div id="searchResults"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="tab-content" id="users">
+                <h2>User Management</h2>
+                <div class="grid">
+                    <div>
+                        <h3>Create User</h3>
+                        <form id="createUserForm">
+                            <div class="form-group">
+                                <label for="userEmail">Email</label>
+                                <input type="email" id="userEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="userFullName">Full Name</label>
+                                <input type="text" id="userFullName">
+                            </div>
+                            <div class="form-group">
+                                <label for="userDepartment">Department</label>
+                                <select id="userDepartment">
+                                    <option value="general">General</option>
+                                    <option value="hr">Human Resources</option>
+                                    <option value="finance">Finance</option>
+                                    <option value="legal">Legal</option>
+                                    <option value="operations">Operations</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="userRole">Role</label>
+                                <select id="userRole">
+                                    <option value="user">User</option>
+                                    <option value="staff">Staff</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn">Create User</button>
+                        </form>
+                    </div>
+                    <div>
+                        <h3>User List</h3>
+                        <button class="btn btn-secondary" onclick="loadUsers()">Refresh Users</button>
+                        <div id="usersList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settings">
+                <h2>System Settings</h2>
+                <div class="form-group">
+                    <label for="configKey">Configuration Key</label>
+                    <input type="text" id="configKey" placeholder="e.g., max_file_size">
+                </div>
+                <div class="form-group">
+                    <label for="configValue">Configuration Value</label>
+                    <input type="text" id="configValue" placeholder="e.g., 10485760">
+                </div>
+                <div class="form-group">
+                    <label for="configDescription">Description</label>
+                    <textarea id="configDescription" placeholder="Description of this configuration"></textarea>
+                </div>
+                <button class="btn" onclick="updateConfig()">Update Configuration</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('adminToken');
+        
+        // Check if already logged in
+        if (authToken) {
+            showAdminPanel();
+        }
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    authToken = data.access_token;
+                    localStorage.setItem('adminToken', authToken);
+                    showAdminPanel();
+                    showAlert('Login successful!', 'success');
+                } else {
+                    showAlert(data.detail || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Login failed: ' + error.message, 'error');
+            }
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                
+                // Update tab active state
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update content active state
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabName).classList.add('active');
+            });
+        });
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFiles = document.getElementById('selectedFiles');
+        let files = [];
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(newFiles) {
+            files = Array.from(newFiles);
+            displaySelectedFiles();
+        }
+
+        function displaySelectedFiles() {
+            selectedFiles.innerHTML = '';
+            files.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span>${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                    <button type="button" onclick="removeFile(${index})">Remove</button>
+                `;
+                selectedFiles.appendChild(fileItem);
+            });
+        }
+
+        function removeFile(index) {
+            files.splice(index, 1);
+            displaySelectedFiles();
+        }
+
+        // Upload form handler
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (files.length === 0) {
+                showAlert('Please select files to upload', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            files.forEach(file => formData.append('files', file));
+            formData.append('department', document.getElementById('department').value);
+            formData.append('document_type', document.getElementById('documentType').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('tags', document.getElementById('tags').value);
+            
+            try {
+                const response = await fetch('/admin/documents/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(`Successfully uploaded ${data.success_count} files!`, 'success');
+                    files = [];
+                    displaySelectedFiles();
+                    document.getElementById('uploadForm').reset();
+                } else {
+                    showAlert(data.detail || 'Upload failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Upload failed: ' + error.message, 'error');
+            }
+        });
+
+        // Search form handler
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const searchData = {
+                query: document.getElementById('searchQuery').value,
+                department: document.getElementById('searchDepartment').value,
+                limit: 10
+            };
+            
+            try {
+                const response = await fetch('/admin/documents/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(searchData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displaySearchResults(data);
+                } else {
+                    showAlert(data.detail || 'Search failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Search failed: ' + error.message, 'error');
+            }
+        });
+
+        function displaySearchResults(data) {
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = `<h4>Search Results (${data.total})</h4>`;
+            
+            data.results.forEach(result => {
+                const resultDiv = document.createElement('div');
+                resultDiv.innerHTML = `
+                    <div style="border: 1px solid #ddd; padding: 1rem; margin: 0.5rem 0; border-radius: 4px;">
+                        <strong>${result.metadata.filename || 'Unknown'}</strong>
+                        <p>${result.content}</p>
+                        <small>Department: ${result.metadata.department} | Type: ${result.metadata.document_type}</small>
+                    </div>
+                `;
+                resultsDiv.appendChild(resultDiv);
+            });
+        }
+
+        function showAdminPanel() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadDashboard();
+        }
+
+        async function loadDashboard() {
+            try {
+                // First try to sync stats to make sure we have the latest data
+                await syncStats(false); // Don't show sync message
+                
+                const response = await fetch('/admin/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateDashboardDisplay(data);
+                } else {
+                    console.error('Failed to load dashboard data');
+                }
+            } catch (error) {
+                console.error('Failed to load dashboard:', error);
+            }
+        }
+
+        async function syncStats(showMessage = true) {
+            try {
+                if (showMessage) {
+                    document.getElementById('syncStatus').textContent = 'Syncing...';
+                }
+                
+                const response = await fetch('/admin/sync-stats', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (showMessage) {
+                        document.getElementById('syncStatus').textContent = `✅ ${data.message}`;
+                        setTimeout(() => {
+                            document.getElementById('syncStatus').textContent = '';
+                        }, 3000);
+                    }
+                    
+                    // Reload dashboard data
+                    loadDashboardData();
+                    return true;
+                } else {
+                    if (showMessage) {
+                        document.getElementById('syncStatus').textContent = '❌ Sync failed';
+                    }
+                    return false;
+                }
+            } catch (error) {
+                console.error('Sync failed:', error);
+                if (showMessage) {
+                    document.getElementById('syncStatus').textContent = '❌ Sync error';
+                }
+                return false;
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/admin/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateDashboardDisplay(data);
+                }
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        }
+
+        function updateDashboardDisplay(data) {
+            // Update basic stats
+            document.getElementById('totalDocs').textContent = data.total_documents;
+            document.getElementById('storageUsed').textContent = data.storage_usage.used;
+            document.getElementById('todayUploads').textContent = data.recent_uploads.length;
+            
+            // Update department stats
+            const departmentChart = document.getElementById('departmentChart');
+            departmentChart.innerHTML = '';
+            for (const [dept, count] of Object.entries(data.documents_by_department)) {
+                const item = document.createElement('div');
+                item.innerHTML = `<strong>${dept}:</strong> ${count} documents`;
+                item.style.padding = '0.5rem';
+                item.style.borderBottom = '1px solid #eee';
+                departmentChart.appendChild(item);
+            }
+            
+            // Update recent uploads
+            const recentList = document.getElementById('recentUploadsList');
+            recentList.innerHTML = '';
+            data.recent_uploads.forEach(upload => {
+                const item = document.createElement('div');
+                item.style.padding = '0.5rem';
+                item.style.borderBottom = '1px solid #eee';
+                item.innerHTML = `
+                    <strong>${upload.filename}</strong><br>
+                    <small>Department: ${upload.department} | Type: ${upload.document_type}<br>
+                    Uploaded by: ${upload.uploaded_by} | Size: ${(upload.size / 1024 / 1024).toFixed(2)} MB</small>
+                `;
+                recentList.appendChild(item);
+            });
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            location.reload();
+        }
+
+        // Add logout button to header
+        document.querySelector('.header h1').innerHTML += ' <button class="btn" onclick="logout()" style="float: right; margin-left: 1rem;">Logout</button>';
+    </script>
+</body>
+</html>

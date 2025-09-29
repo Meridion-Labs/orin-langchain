@@ -5,9 +5,11 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.config import settings
-from app.api import auth_router, chat_router
+from app.api import auth_router, chat_router, admin_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -30,15 +32,32 @@ app.add_middleware(
 # Include routers
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(chat_router, prefix="/api/v1", tags=["Chat & Documents"])
+app.include_router(admin_router, prefix="/admin", tags=["Admin"])
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/")
 async def root():
-    """Root endpoint with system information."""
+    """Serve the main UI."""
+    return FileResponse('static/index.html')
+
+
+@app.get("/admin")
+async def admin_ui():
+    """Serve the admin UI."""
+    return FileResponse('static/admin.html')
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint with system information."""
     return {
         "name": "ORIN AI Agent System",
         "version": "1.0.0",
         "description": "AI agent for private/government offices",
+        "status": "healthy",
         "features": [
             "RAG-based document search using Pinecone",
             "Secure user authentication with JWT",
@@ -53,15 +72,6 @@ async def root():
             "documents": "/api/v1/documents",
             "api_docs": "/docs"
         }
-    }
-
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "timestamp": "2024-01-01T00:00:00Z"
     }
 
 
