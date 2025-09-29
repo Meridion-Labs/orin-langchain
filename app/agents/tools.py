@@ -3,7 +3,7 @@
 import json
 import httpx
 import os
-from contextvars import ContextVar
+import threading
 from typing import Dict, Any, List, Optional
 from langchain_core.tools import Tool
 from langchain_core.documents import Document
@@ -12,31 +12,34 @@ from app.config import settings
 from app.rag import document_manager
 
 
-# Context variable to track sources gathered during the current agent run
-_rag_sources_var: ContextVar[Optional[List[Dict[str, Any]]]] = ContextVar("rag_sources", default=None)
+# Simple thread-safe collector for RAG sources during a query
+_rag_sources: List[Dict[str, Any]] = []
+_rag_sources_lock = threading.Lock()
 
 
 def _append_rag_sources(new_sources: List[Dict[str, Any]]) -> None:
-    """Append sources for the current agent invocation."""
-    existing = _rag_sources_var.get()
-    if existing:
-        # Deduplicate while preserving order
-        combined = existing + [src for src in new_sources if src not in existing]
-        _rag_sources_var.set(combined)
-    else:
-        _rag_sources_var.set(new_sources)
+    """Append sources discovered during the current agent invocation."""
+    if not new_sources:
+        return
+
+    with _rag_sources_lock:
+        for source in new_sources:
+            if source not in _rag_sources:
+                _rag_sources.append(source)
 
 
 def get_and_clear_rag_sources() -> List[Dict[str, Any]]:
     """Retrieve and clear tracked RAG sources for the current context."""
-    sources = _rag_sources_var.get()
-    _rag_sources_var.set([])
-    return sources or []
+    with _rag_sources_lock:
+        sources = list(_rag_sources)
+        _rag_sources.clear()
+    return sources
 
 
 def reset_rag_sources() -> None:
     """Reset tracked RAG sources before running a new agent query."""
-    _rag_sources_var.set([])
+    with _rag_sources_lock:
+        _rag_sources.clear()
 
 
 def search_documents(query: str, document_type: str = None, department: str = None) -> str:
@@ -64,19 +67,22 @@ def search_documents(query: str, document_type: str = None, department: str = No
             doc_type = metadata.get('document_type') or metadata.get('type') or 'Document'
             department_info = metadata.get('department') or ''
 
-            filename = metadata.get('filename') or metadata.get('file_name')
+            filename = (
+                metadata.get('filename')
+                or metadata.get('file_name')
+                or metadata.get('document_name')
+                or metadata.get('title')
+            )
             if not filename and source_path:
                 filename = os.path.basename(source_path)
             if not filename:
-                filename = 'Unknown source'
+                filename = doc_type or 'Retrieved context'
 
-            if filename and filename != 'Unknown source':
+            if filename:
                 source_info = f" [Source: {filename}"
                 if department_info:
                     source_info += f" - {department_info}"
                 source_info += f" ({doc_type})]"
-            elif doc_type:
-                source_info = f" [Source: {doc_type}]"
 
             source_details.append({
                 "filename": filename,
@@ -94,8 +100,6 @@ def search_documents(query: str, document_type: str = None, department: str = No
             seen_keys = set()
             for detail in source_details:
                 filename = detail.get("filename")
-                if not filename or filename == "Unknown source":
-                    continue
 
                 key = (
                     filename,

@@ -1,12 +1,21 @@
 {
-  "total_documents": 1,
+  "total_documents": 2,
   "documents_by_department": {
-    "general": 1
+    "general": 2
   },
   "documents_by_type": {
-    "policy": 1
+    "policy": 1,
+    "unknown": 1
   },
   "recent_uploads": [
+    {
+      "filename": "Unknown",
+      "department": "general",
+      "document_type": "unknown",
+      "uploaded_by": "Unknown",
+      "uploaded_at": "2025-09-29T16:23:52.130571",
+      "size": 0
+    },
     {
       "filename": "ML CV Sept NAEx.pdf",
       "department": "general",
@@ -16,5 +25,5 @@
       "size": 200588.0
     }
   ],
-  "last_updated": "2025-09-29T15:00:35.195734"
+  "last_updated": "2025-09-29T16:23:52.130589"
 }
